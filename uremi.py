@@ -1,5 +1,6 @@
 import sys
 
+EVENT_MAP = {}
 
 class Tag:
 
@@ -22,6 +23,10 @@ class Tag:
 
     def append(self, c):
         self.children.append(c)
+
+    def on(self, event, handler):
+        global EVENT_MAP
+        EVENT_MAP[(id(self), event)] = handler
 
 
 class Widget(Tag):
@@ -111,10 +116,13 @@ class WebApp:
             print("websock connected")
             while 1:
                 data = s.readline()
+                data = data.decode("ascii").rstrip().split()
                 print(data)
+                EVENT_MAP[(int(data[0]), data[1])]()
         else:
             s.write("HTTP/1.0 404 NAK\r\n\r\n")
 
 
     def serve(self):
+        print(EVENT_MAP)
         server.serve(self.http_handler)
