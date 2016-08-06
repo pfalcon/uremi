@@ -1,6 +1,10 @@
 import sys
 
 EVENT_MAP = {}
+CONN = None
+
+def conn():
+    return CONN
 
 class Tag:
 
@@ -47,6 +51,9 @@ class Label(Tag):
         super().__init__(**styles)
         self.inner = text
 
+    def set(self, text):
+        CONN.write("innerHTML\t{}\t{}".format(id(self), text))
+
 
 class Button(Tag):
 
@@ -75,6 +82,14 @@ window.onload = function() {
     var wsaddr = window.location.toString().replace("http:", "ws:")
 //    alert("loaded: " + wsaddr);
     ws = new WebSocket(wsaddr + "ws");
+    ws.onmessage = function(ev) {
+//        alert(ev.data);
+        var comp = ev.data.split("\t");
+        if (comp[0] == "innerHTML") {
+            var el = document.getElementById(comp[1]);
+            el.innerHTML = comp[2];
+        }
+    }
 }
 </script>
 </head>
@@ -118,6 +133,8 @@ class WebApp:
                 data = s.readline()
                 data = data.decode("ascii").rstrip().split()
                 print(data)
+                global CONN
+                CONN = s
                 EVENT_MAP[(int(data[0]), data[1])]()
         else:
             s.write("HTTP/1.0 404 NAK\r\n\r\n")
